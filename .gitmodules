@@ -1,3 +1,4 @@
 [submodule "flink"]
 	path = container/appmaster/flink
 	url = https://github.com/vijikarthi/flink
+	branch = feature-mesos-flink
