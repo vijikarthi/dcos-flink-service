@@ -1,89 +1,216 @@
 {
-  "type": "object",
-  "properties": {
-    "service": {
-      "description": "DC/OS Flink service configuration properties.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "default": "flink",
-          "description": "The Flink TaskManager will register with Mesos with this as framework name. This service will be available at http://<dcos_url>/service/<name>/",
-          "type": "string"
-        },
-        "slots": {
-          "description": "A processing slot allows Flink to execute a distributed DataSet transformation, such as a data source or a map-transformation. As a general recommendation, the number of available CPU cores is a good default.",
-          "type": "integer",
-          "default": 1,
-          "minimum": 1
-        },
-        "parallelism-default": {
-          "description": "The parallelism used for programs that did not specify any other parallelism.",
-          "type": "integer",
-          "default": 1,
-          "minimum": 1
-        }
+   "type":"object",
+   "properties":{
+      "service":{
+         "description":"DC/OS Flink service configuration properties.",
+         "type":"object",
+         "properties":{
+            "name":{
+               "default":"flink",
+               "description":"The Flink TaskManager will register with Mesos with this as framework name. This service will be available at http://<dcos_url>/service/<name>/",
+               "type":"string"
+            },
+            "slots":{
+               "description":"A processing slot allows Flink to execute a distributed DataSet transformation, such as a data source or a map-transformation. As a general recommendation, the number of available CPU cores is a good default.",
+               "type":"integer",
+               "default":1,
+               "minimum":1
+            },
+            "parallelism-default":{
+               "description":"The parallelism used for programs that did not specify any other parallelism.",
+               "type":"integer",
+               "default":1,
+               "minimum":1
+            },
+            "role":{
+               "description":"The Dispatcher component will register with Mesos with this role.",
+               "type":"string",
+               "default":"*"
+            },
+            "principal":{
+               "description":"The Dispatcher component will register with Mesos with this principal.",
+               "type":"string",
+               "default":""
+            },
+            "secret":{
+               "description":"The Dispatcher component will register with mesos with this secret.",
+               "type":"string",
+               "default":""
+            },
+            "user":{
+               "description":"Tasks will run as this user.",
+               "type":"string",
+               "default":"root"
+            },
+            "log-level":{
+               "type":"string",
+               "description":"log4j log level for Flink cluster.  May be set to any valid log4j log level: https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/Level.html",
+               "default":"INFO"
+            }
+         }
+      },
+      "app-master":{
+         "description":"Properties configuring the Flink AppMaster/JobManager.",
+         "type":"object",
+         "properties":{
+            "cpus":{
+               "default":1,
+               "description":"CPU shares of AppMaster.",
+               "minimum":0.1,
+               "type":"number"
+            },
+            "memory":{
+               "default":1024,
+               "description":"Memory (MB) of AppMaster.",
+               "minimum":1024,
+               "type":"number"
+            },
+            "heap":{
+               "description":"Heap size (MB) for the AppMaster JVM. This value has to be less or equal than memory.",
+               "type":"number",
+               "default":256,
+               "minimum":1
+            }
+         }
+      },
+      "task-managers":{
+         "description":"Properties configuring the Flink TaskManagers.",
+         "type":"object",
+         "properties":{
+            "count":{
+               "description":"Number of task managers to spawn.",
+               "type":"integer",
+               "default":1,
+               "minimum":1
+            },
+            "cpus":{
+               "description":"CPU shares of each TaskManager.",
+               "type":"number",
+               "default":1,
+               "minimum":0.01
+            },
+            "memory":{
+               "description":"Memory (MB) for each task manager.",
+               "type":"number",
+               "default":1024,
+               "minimum":256
+            },
+            "heap":{
+               "description":"Heap size (MB) for the TaskManager JVM. This value has to be less or equal than memory.",
+               "type":"number",
+               "default":512,
+               "minimum":1
+            },
+            "memory-preallocation":{
+               "description":"Specify whether TaskManager-memory should be allocated when starting up (checked) or when memory is required in the memory manager (unchecked).",
+               "type":"boolean",
+               "default":true
+            }
+         }
+      },
+      "security":{
+         "description":"Flink security configuration properties",
+         "type":"object",
+         "properties":{
+            "kerberos":{
+               "description":"Flink Kerberos configuration.",
+               "type":"object",
+               "properties":{
+                  "krb5conf":{
+                     "description":"Base64 encoded krb5.conf file. Copied to the cluster so that they may access your KDC.",
+                     "type":"string",
+                     "default":""
+                  },
+                  "use-ticket-cache":{
+                     "description":"Indicates whether to read from the user's kerberos ticket cache.",
+                     "type":"boolean",
+                     "default":true
+                  },
+                  "keytab":{
+                     "description":"Base64 encoded keytab file. Flink cluster and job will run under this identity.",
+                     "type":"string",
+                     "default":""
+                  },
+                  "principal":{
+                     "description":"Kerberos principal name associated with the keytab.",
+                     "type":"string",
+                     "default":""
+                  }
+               }
+            },
+            "sasl":{
+               "description":"SASL configuration properties.",
+               "type":"object",
+               "properties":{
+                  "login-contexts":{
+                     "description":"A comma-separated list of JAAS login contexts to provide the Kerberos credentials to the services.",
+                     "type":"string",
+                     "default":""
+                  },
+                  "zookeeper-service-name":{
+                     "description":"The Kerberos service name that ZooKeeper cluster is configured to use.",
+                     "type":"string",
+                     "default":"zookeeper"
+                  },
+                  "zookeeper-login-context-name":{
+                     "description":"The JAAS login context name that the zookeeper client uses to request the login context. Should match one of the values specified in the sasl.login-contexts property",
+                     "type":"string",
+                     "default":"client"
+                  }
+               }
+            },
+            "ssl":{
+               "description":"Flink SSL certificates and private key configuration.",
+               "type":"object",
+               "properties":{
+                  "enabled":{
+                     "default":false,
+                     "description":"Set to true to enable SSL.",
+                     "type":"boolean"
+                  },
+                  "keyStoreBase64":{
+                     "default":"",
+                     "description":"Base64 encoded blob containing a Java keystore.",
+                     "type":"string"
+                  },
+                  "trustStoreBase64":{
+                     "default":"",
+                     "description":"Base64 encoded blob containing a Java truststore.",
+                     "type":"string"
+                  },
+                  "keyPassword":{
+                     "default":"",
+                     "description":"An optional password for the private key in the keystore.",
+                     "type":"string"
+                  },
+                  "keyStorePassword":{
+                     "default":"",
+                     "description":"An optional password for the keystore (and the key if keyPassword is not given).",
+                     "type":"string"
+                  },
+                  "trustStorePassword":{
+                     "default":"",
+                     "description":"An optional password for the truststore.",
+                     "type":"string"
+                  },
+                  "enabledAlgorithms":{
+               "default":"SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA,SSL_DH_anon_WITH_3DES_EDE_CBC_SHA,SSL_DH_anon_WITH_DES_CBC_SHA,SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA,SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA,SSL_DHE_DSS_WITH_DES_CBC_SHA,SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_DES_CBC_SHA,SSL_RSA_EXPORT_WITH_DES40_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_RSA_WITH_DES_CBC_SHA,SSL_RSA_WITH_NULL_MD5,SSL_RSA_WITH_NULL_SHA,TLS_DH_anon_WITH_AES_128_CBC_SHA,TLS_DH_anon_WITH_AES_128_CBC_SHA256,TLS_DH_anon_WITH_AES_128_GCM_SHA256,TLS_DH_anon_WITH_AES_256_CBC_SHA,TLS_DH_anon_WITH_AES_256_CBC_SHA256,TLS_DH_anon_WITH_AES_256_GCM_SHA384,TLS_DHE_DSS_WITH_AES_128_CBC_SHA,TLS_DHE_DSS_WITH_AES_128_CBC_SHA256,TLS_DHE_DSS_WITH_AES_128_GCM_SHA256,TLS_DHE_DSS_WITH_AES_256_CBC_SHA,TLS_DHE_DSS_WITH_AES_256_CBC_SHA256,TLS_DHE_DSS_WITH_AES_256_GCM_SHA384,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_anon_WITH_AES_128_CBC_SHA,TLS_ECDH_anon_WITH_AES_256_CBC_SHA,TLS_ECDH_anon_WITH_NULL_SHA,TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDH_ECDSA_WITH_NULL_SHA,TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_RSA_WITH_AES_256_CBC_SHA,TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDH_RSA_WITH_NULL_SHA,TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_NULL_SHA,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_NULL_SHA,TLS_EMPTY_RENEGOTIATION_INFO_SCSV,TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5,TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA,TLS_KRB5_WITH_3DES_EDE_CBC_MD5,TLS_KRB5_WITH_3DES_EDE_CBC_SHA,TLS_KRB5_WITH_DES_CBC_MD5,TLS_KRB5_WITH_DES_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_NULL_SHA256",
+                     "description":"A comma-separared list of allowed ciphers.",
+                     "type":"string"
+                  }
+               }
+            }
+         }
+      },
+      "hdfs":{
+         "description":"Flink-HDFS configuration properties",
+         "type":"object",
+         "properties":{
+            "config-url":{
+               "type":"string",
+               "description":"Base URL that serves HDFS config files (hdfs-site.xml, core-site.xml)."
+            }
+         }
       }
-    },
-
-    "app-master": {
-      "description": "Properties configuring the Flink AppMaster/JobManager.",
-      "type": "object",
-      "properties": {
-        "cpus": {
-          "default": 1,
-          "description": "CPU shares of AppMaster.",
-          "minimum": 0.1,
-          "type": "number"
-        },
-        "memory": {
-          "default": 1024,
-          "description": "Memory (MB) of AppMaster.",
-          "minimum": 1024,
-          "type": "number"
-        },
-        "heap": {
-          "description": "Heap size (MB) for the AppMaster JVM. This value has to be less or equal than memory.",
-          "type": "number",
-          "default": 256,
-          "minimum": 1
-        }
-      }
-    },
-
-    "task-managers": {
-      "description": "Properties configuring the Flink TaskManagers.",
-      "type": "object",
-      "properties": {
-        "count": {
-          "description": "Number of task managers to spawn.",
-          "type": "integer",
-          "default": 1,
-          "minimum": 1
-        },
-        "cpus": {
-          "description": "CPU shares of each TaskManager.",
-          "type": "number",
-          "default": 1,
-          "minimum": 0.01
-        },
-        "memory": {
-          "description": "Memory (MB) for each task manager.",
-          "type": "number",
-          "default": 1024,
-          "minimum": 256
-        },
-        "heap": {
-          "description": "Heap size (MB) for the TaskManager JVM. This value has to be less or equal than memory.",
-          "type": "number",
-          "default": 512,
-          "minimum": 1
-        },
-        "memory-preallocation": {
-          "description": "Specify whether TaskManager-memory should be allocated when starting up (checked) or when memory is required in the memory manager (unchecked).",
-          "type": "boolean",
-          "default": true
-        }
-      }
-    }
-  }
+   }
 }

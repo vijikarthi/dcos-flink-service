@@ -1,39 +1,129 @@
 {
-  "id": "{{service.name}}",
-  "cpus": {{app-master.cpus}},
-  "mem": {{app-master.memory}},
+    "id": "{{service.name}}",
+    "cpus": {{app-master.cpus}},
+    "mem": {{app-master.memory}},
+    "cmd": "/sbin/init.sh",
+    "env": {
+{{#security.kerberos.krb5conf}}
+        "FLINK_SECURITY_KRB5_CONF_BASE64": "{{security.kerberos.krb5conf}}",
+{{/security.kerberos.krb5conf}}
 
-  "env": {
-    "DCOS_SERVICE_NAME": "{{service.name}}"
-  },
+{{#security.kerberos.use-ticket-cache}}
+        "FLINK_SECURITY_USE_TICKET_CACHE": "{{security.kerberos.use-ticket-cache}}",
+{{/security.kerberos.use-ticket-cache}}
 
-  "cmd": "export LIBPROCESS_PORT=$PORT4 && cd \"$MESOS_SANDBOX\" && \"$FLINK_HOME/bin/mesos-appmaster.sh\" -Dblob.server.port=$PORT2 -Djobmanager.heap.mb={{app-master.heap}} -Djobmanager.rpc.port=$PORT1 -Djobmanager.web.port=$PORT0 -Dmesos.artifact-server.port=$PORT3 -Dmesos.initial-tasks={{task-managers.count}} -Dmesos.resourcemanager.tasks.cpus={{task-managers.cpus}} -Dmesos.resourcemanager.tasks.mem={{task-managers.memory}} -Dtaskmanager.heap.mb={{task-managers.heap}} -Dtaskmanager.memory.preallocate={{task-managers.memory-preallocation}} -Dtaskmanager.numberOfTaskSlots={{service.slots}} -Dparallelism.default={{service.parallelism-default}}",
+{{#security.kerberos.keytab}}
+        "FLINK_SECURITY_KEYTAB_BASE64": "{{security.kerberos.keytab}}",
+{{/security.kerberos.keytab}}
 
-  "container": {
-    "type": "DOCKER",
-    "docker": {
-      "image": "{{resource.assets.container.docker.flink}}",
-      "network": "HOST"
-    }
-  },
+{{#security.kerberos.principal}}
+        "FLINK_SECURITY_PRINCIPAL": "{{security.kerberos.principal}}",
+{{/security.kerberos.principal}}
 
-  "ports": [0, 0, 0, 0, 0],
+{{#security.sasl.login-contexts}}
+        "FLINK_SASL_LOGIN_CONTEXTS": "{{security.sasl.login-contexts}}",
+{{/security.sasl.login-contexts}}
 
-  "healthChecks": [
-    {
-      "protocol": "HTTP",
-      "path": "/",
-      "portIndex": 0,
-      "gracePeriodSeconds": 5,
-      "intervalSeconds": 60,
-      "timeoutSeconds": 10,
-      "maxConsecutiveFailures": 3
-    }
-  ],
+{{#security.sasl.zookeeper-service-name}}
+        "FLINK_SASL_ZK_SERVICE_NAME": "{{security.sasl.zookeeper-service-name}}",
+{{/security.sasl.zookeeper-service-name}}
 
-  "labels": {
-    "DCOS_SERVICE_NAME": "{{service.name}}",
-    "DCOS_SERVICE_PORT_INDEX": "0",
-    "DCOS_SERVICE_SCHEME": "http"
-  }
+{{#security.sasl.zookeeper-login-context-name}}
+        "FLINK_SASL_ZK_LOGIN_CTX_NAME": "{{security.sasl.zookeeper-login-context-name}}",
+{{/security.sasl.zookeeper-login-context-name}}
+
+{{#security.ssl.enabled}}
+        "FLINK_SSL_ENABLED": "{{security.ssl.enabled}}",
+        "FLINK_SSL_KEYSTOREBASE64": "{{security.ssl.keyStoreBase64}}",
+        "FLINK_SSL_TRUSTSTOREBASE64": "{{security.ssl.trustStoreBase64}}",
+        "FLINK_SSL_KEYSTOREPASSWORD": "{{security.ssl.keyStorePassword}}",
+        "FLINK_SSL_KEYPASSWORD": "{{security.ssl.keyPassword}}",
+        "FLINK_SSL_TRUSTSTOREPASSWORD": "{{security.ssl.keyStorePassword}}",
+        "FLINK_SSL_PROTOCOL": "{{security.ssl.protocol}}",
+        "FLINK_SSL_ENABLEDALGORITHMS": "{{security.ssl.enabledAlgorithms}}",
+{{/security.ssl.enabled}}
+
+        "DCOS_SERVICE_NAME": "{{service.name}}",
+	"FLINK_TASK_SLOTS": "{{service.slots}}",
+	"FLINK_PARALLELISM_DEFAULT": "{{service.parallelism-default}}",
+        "FLINK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
+        "FLINK_DISPATCHER_MESOS_ROLE": "{{service.role}}",
+        "FLINK_DISPATCHER_MESOS_PRINCIPAL": "{{service.principal}}",
+        "FLINK_DISPATCHER_MESOS_SECRET": "{{service.secret}}",
+        "FLINK_USER": "{{service.user}}",
+        "FLINK_LOG_LEVEL": "{{service.log-level}}",
+	"FLINK_APP_MASTER_CPUS": "{{app-master.cpus}}",
+	"FLINK_APP_MASTER_MEM": "{{app-master.memory}}",
+	"FLINK_APP_MASTER_HEAP": "{{app-master.heap}}",
+	"FLINK_TASK_MANAGER_COUNT": "{{task-managers.count}}",
+	"FLINK_TASK_MANAGER_CPUS": "{{task-managers.cpus}}",
+	"FLINK_TASK_MANAGER_MEM": "{{task-managers.memory}}",
+	"FLINK_TASK_MANAGER_HEAP": "{{task-managers.heap}}",
+	"FLINK_TASK_MANAGER_MEM_PREALLOCATION": "{{task-managers.memory-preallocation}}"
+    },
+
+    "ports": [
+        0,
+        0,
+        0,
+        0,
+        0
+    ],
+    "container": {
+        "type": "DOCKER",
+        "docker": {
+            "image": "{{resource.assets.container.docker.flink}}",
+            "network": "HOST",
+{{#service.user}}
+            "parameters": [
+               {
+                 "key": "user",
+                 "value": "{{service.user}}"
+               }
+            ],
+{{/service.user}}
+            "forcePullImage": true
+        }
+    },
+    "healthChecks": [
+        {
+{{#security.ssl.enabled}}
+            "protocol": "COMMAND",
+            "command": { "value": "curl -f -k https://$HOST:$PORT0/" },
+{{/security.ssl.enabled}}
+{{^security.ssl.enabled}}
+            "path": "/",
+            "portIndex": 0,
+            "protocol": "HTTP",
+{{/security.ssl.enabled}}
+            "gracePeriodSeconds": 5,
+            "intervalSeconds": 60,
+            "timeoutSeconds": 10,
+            "maxConsecutiveFailures": 3
+        }
+    ],
+    "labels": {
+{{#hdfs.config-url}}
+        "FLINK_HDFS_CONFIG_URL": "{{hdfs.config-url}}",
+{{/hdfs.config-url}}
+        "DCOS_PACKAGE_FRAMEWORK_NAME": "{{service.name}}",
+        "DCOS_SERVICE_NAME": "{{service.name}}",
+        "DCOS_SERVICE_PORT_INDEX": "0",
+{{#security.ssl.enabled}}
+        "DCOS_SERVICE_SCHEME": "https"
+{{/security.ssl.enabled}}
+{{^security.ssl.enabled}}
+        "DCOS_SERVICE_SCHEME": "http"
+{{/security.ssl.enabled}}
+    },
+{{#service.user}}
+    "user": "{{service.user}}",
+{{/service.user}}
+    "uris": [
+    {{#hdfs.config-url}}
+    "{{hdfs.config-url}}/hdfs-site.xml",
+    "{{hdfs.config-url}}/core-site.xml"
+    {{/hdfs.config-url}}
+    ]
 }
+
